@@ -1,6 +1,6 @@
 /**
     Bomberman
-    versão: 0.1
+    versão: 0.2
     Lucas Carvalho de Borba
     Miguel
     Matheus
@@ -17,9 +17,8 @@
 using namespace std;
 const int M = 3;
 
-
 bool verificaColisao(int m[M_LINHAS][M_COLUNAS], int x, int y) {
-    if (m[x][y] == 0 ) {
+    if (m[x][y] == 0 || m[x][y] == 4) {
         return true;
     } else {
         return false;
@@ -27,13 +26,28 @@ bool verificaColisao(int m[M_LINHAS][M_COLUNAS], int x, int y) {
 }
 
 void bomba(int m[M_LINHAS][M_COLUNAS], int x, int y, bool *flagBomba){
-
-
     if (!*flagBomba){ //verifica se a bomba já existe, se não existe, coloca uma bomba
         *flagBomba = true; //altera a flag informando que agora existe uma bomba
         m[x][y] = 3; // coloca a bomba no mapa
     }
+}
 
+void movimentoInimigo(int m[M_LINHAS][M_COLUNAS], int &ex, int &ey) {
+    int direcao = rand() % 4; // escolhe uma direção aleatória
+    int passo = rand() % 3 + 1; // escolhe um número aleatório de passos
+    for (int i = 0; i < passo; i++) {
+        if (direcao == 0 && verificaColisao(m, ex - 1, ey)) {
+            ex--;
+        } else if (direcao == 1 && verificaColisao(m, ex + 1, ey)) {
+            ex++;
+        } else if (direcao == 2 && verificaColisao(m, ex, ey - 1)) {
+            ey--;
+        } else if (direcao == 3 && verificaColisao(m, ex, ey + 1)) {
+            ey++;
+        } else {
+            break;
+        }
+    }
 }
 
 int fimDeJogo() {
@@ -82,6 +96,10 @@ int main()
     int x=13, y=1;
     //Vari�vel para tecla precionada
     char tecla;
+    int ex1 = 1, ey1 = 1; // posição do primeiro inimigo
+    int ex2 = 13, ey2 = 13; // posição do segundo inimigo
+    int contadorMovimentoInimigo = 0; // contador para controlar o movimento dos inimigos
+
     //Variável para verificar se já existe bomba
     bool flagBomba = false;
 
@@ -98,24 +116,48 @@ int main()
             for(int j=0;j<M_COLUNAS;j++){
                 if(i==x && j==y){
                     cout<<char(2); //personagem
+                } else if (i==ex1 && j==ey1) {
+                    cout<<char(5); // primeiro inimigo
+                } else if (i==ex2 && j==ey2) {
+                    cout<<char(6); // segundo inimigo
                 } else {
                     switch (m[i][j]){
                         case 0: cout<<" "; break; //caminho
                         case 1: cout<<char(219); break; //parede
-                        case 2: cout<<char(178); break; //parede quebrável
+                        case 2: cout<<"#"; break; //parede quebrável
                         case 3: cout<<char(207); break; //bomba
-                        case 4: cout<<char(176); break; //parede quebrável
+                        case 4: cout<<"*"; break; //explosão da bomba
                         //default: cout<<"-"; //erro
                     } //fim switch
                 }
             }
             cout<<"\n";
         } //fim for mapa
+        
+        contadorMovimentoInimigo++;
+        if (contadorMovimentoInimigo == 30) { // move os inimigos a cada 10 iterações do loop
+        movimentoInimigo(m, ex1, ey1);
+        movimentoInimigo(m, ex2, ey2);
+        contadorMovimentoInimigo = 0;
+        }
 
         if (m[x][y] == 4) { // condição de fim : explodiu com a bomba
             return fimDeJogo();
         }
-
+        if ((x == ex1 && y == ey1) || (x == ex2 && y == ey2)) {
+            return fimDeJogo(); // o jogador colidiu com um inimigo
+        }
+        if (m[ex1][ey1] == 4) {
+            ex1 = -1; // o primeiro inimigo foi atingido pela explosão da bomba
+        }
+        if (m[ex2][ey2] == 4) {
+            ex2 = -1; // o segundo inimigo foi atingido pela explosão da bomba
+        }
+        if (ex1 == -1 && ex2 == -1) {
+        cout << "\nVOCÊ VENCEU!"; 
+        return 0; // verifica se o jogador matou todos os inimigos  
+        }
+        
         ///executa os movimentos
          if ( _kbhit() ){
             tecla = getch();
